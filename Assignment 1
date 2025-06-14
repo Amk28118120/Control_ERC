@@ -1,0 +1,45 @@
+%pip install control ipywidgets
+
+import control
+import numpy as np
+import matplotlib.pyplot as plt
+from ipywidgets import interact, FloatSlider
+from control import tf, step_response
+
+# Define the transfer function and step response
+def system_response(K=10, zeta=0.5, wn=2):
+    # Convert damping ratio and natural frequency to a and b
+    a = 2 * zeta * wn  # Damping coefficient
+    b = wn**2          # Natural frequency squared
+    sys = tf([K], [1, a, b])  # G(s) = K / (s^2 + a s + b)
+    t, y = step_response(sys, T=np.linspace(0, 5, 1000))
+    return t, y
+
+# Interactive plot function
+@interact(zeta=FloatSlider(min=0.1, max=1.5, step=0.1, value=0.5, description='Damping (ζ)'),
+          wn=FloatSlider(min=1, max=5, step=0.5, value=2, description='Freq (ωn)'),
+          K=FloatSlider(min=5, max=20, step=1, value=10, description='Gain (K)'))
+def plot_response(zeta, wn, K):
+    t, y = system_response(K, zeta, wn)
+    plt.figure(figsize=(10, 6))
+    plt.plot(t, y, label=f'G(s) = {K}/(s^2 + {2*zeta*wn:.1f}s + {wn**2:.1f})')
+    plt.title('Step Response of Coffee Pouring System')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Tilt Angle (normalized)')
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+    # Commentary on response
+    print(f"Commentary: ")
+    if zeta < 0.7:
+        print("- Low damping (ζ < 0.7) causes oscillations and overshoot, mimicking wobbly pouring.")
+    elif zeta > 1.0:
+        print("- High damping (ζ > 1.0) reduces oscillations but increases settling time, leading to sluggishness.")
+    else:
+        print("- Moderate damping (0.7 ≤ ζ ≤ 1.0) balances speed and stability for smooth pouring.")
+    print(f"- Higher ωn speeds up the response but may amplify oscillations if ζ is low.")
+    print(f"- Higher K increases the pour rate but can worsen overshoot if not balanced with ζ.")
+
+# Run the interactive plot
+plt.show()
